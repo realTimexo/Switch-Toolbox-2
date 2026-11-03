@@ -200,7 +200,7 @@ namespace Updater
         static async Task GetReleases(GitHubClient client)
         {
             List<Release> Releases = new List<Release>();
-            foreach (Release r in await client.Repository.Release.GetAll("KillzXGaming", "Switch-Toolbox"))
+            foreach (Release r in await client.Repository.Release.GetAll("realTimexo", "Switch-Toolbox-2"))
                 Releases.Add(r);
             releases = Releases.ToArray();
         }

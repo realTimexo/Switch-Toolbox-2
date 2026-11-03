@@ -112,7 +112,7 @@ namespace Toolbox
             DateTimeOffset CurrentRelease;
             bool IsValidTime = DateTimeOffset.TryParse(Runtime.CompileDate, out CurrentRelease);
 
-            foreach (GitHubCommit c in await client.Repository.Commit.GetAll("KillzXGaming", "Switch-Toolbox", options))
+            foreach (GitHubCommit c in await client.Repository.Commit.GetAll("realTimexo", "Switch-Toolbox-2", options))
             {
                 if (IsValidTime)
                 {
@@ -132,7 +132,7 @@ namespace Toolbox
         static async Task GetReleases(GitHubClient client)
         {
             Releases = new List<Release>();
-            foreach (Release r in await client.Repository.Release.GetAll("KillzXGaming", "Switch-Toolbox"))
+            foreach (Release r in await client.Repository.Release.GetAll("realTimexo", "Switch-Toolbox-2"))
                 Releases.Add(r);
         }
     }

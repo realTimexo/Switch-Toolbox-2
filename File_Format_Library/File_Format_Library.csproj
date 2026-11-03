@@ -421,6 +421,7 @@
     <Compile Include="FileFormats\Archives\BEA.cs" />
     <Compile Include="FileFormats\Audio\BCWAV.cs" />
     <Compile Include="FileFormats\Audio\BFWAV.cs" />
+    <Compile Include="FileFormats\Audio\BWAV.cs" />
     <Compile Include="FileFormats\Audio\BRWAV.cs" />
     <Compile Include="FileFormats\Audio\HPS.cs" />
     <Compile Include="FileFormats\Audio\IDSP.cs" />

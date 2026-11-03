@@ -5,12 +5,12 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("Toolbox")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyTitle("Switch Toolbox 2")]
+[assembly: AssemblyDescription("A community-maintained Nintendo asset toolkit")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("Toolbox")]
-[assembly: AssemblyCopyright("Copyright ©  2019")]
+[assembly: AssemblyCompany("Timexo")]
+[assembly: AssemblyProduct("Switch Toolbox 2")]
+[assembly: AssemblyCopyright("Copyright © Timexo and original Switch Toolbox contributors")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

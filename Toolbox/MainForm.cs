@@ -429,7 +429,7 @@ namespace Toolbox
 
                             foreach (var fileFormat in formats)
                             {
-                                foreach (var ext in format.Extension)
+                                foreach (var ext in fileFormat.Extension)
                                 {
                                     if (Utils.HasExtension(sfd.FileName, ext))
                                     {
@@ -1345,15 +1345,15 @@ namespace Toolbox
 
         private void githubToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            System.Diagnostics.Process.Start("https://github.com/KillzXGaming/Switch-Toolbox");
+            System.Diagnostics.Process.Start("https://github.com/realTimexo/Switch-Toolbox-2");
         }
 
         private void reportBugToolStripMenuItem_Click(object sender, EventArgs e) {
-            System.Diagnostics.Process.Start("https://github.com/KillzXGaming/Switch-Toolbox/issues");
+            System.Diagnostics.Process.Start("https://github.com/realTimexo/Switch-Toolbox-2/issues");
         }
 
         private void requestFeatureToolStripMenuItem1_Click(object sender, EventArgs e) {
-            System.Diagnostics.Process.Start("https://github.com/KillzXGaming/Switch-Toolbox/issues");
+            System.Diagnostics.Process.Start("https://github.com/realTimexo/Switch-Toolbox-2/issues");
         }
 
         private void tutorialToolStripMenuItem_Click(object sender, EventArgs e) {

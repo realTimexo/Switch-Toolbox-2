@@ -1,0 +1,39 @@
+name: Windows Build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Set up MSBuild
+        uses: microsoft/setup-msbuild@v2
+      - name: Set up NuGet
+        uses: NuGet/setup-nuget@v2
+      - name: Restore packages
+        run: nuget restore Toolbox.sln
+      - name: Build Release
+        run: msbuild Toolbox.sln /m /p:Configuration=Release /p:Platform="Any CPU" /p:RestorePackages=false
+      - name: Package build output
+        shell: pwsh
+        run: |
+          $output = Join-Path $PWD 'Toolbox/bin/Release'
+          if (!(Test-Path (Join-Path $output 'Toolbox.exe'))) { throw "Release output did not contain Toolbox.exe at $output" }
+          $stage = Join-Path $PWD 'build-stage'
+          New-Item -ItemType Directory -Force -Path $stage | Out-Null
+          Copy-Item -Path (Join-Path $output '*') -Destination $stage -Recurse -Force
+          Copy-Item README.md, LICENSE, logo-new.png -Destination $stage -Force
+          Compress-Archive -Path (Join-Path $stage '*') -DestinationPath 'SwitchToolbox2-build.zip' -Force
+      - name: Upload Windows ZIP
+        uses: actions/upload-artifact@v4
+        with:
+          name: SwitchToolbox2-${{ github.sha }}
+          path: SwitchToolbox2-build.zip
+          if-no-files-found: error
+          retention-days: 14

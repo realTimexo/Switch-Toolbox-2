@@ -45,7 +45,7 @@
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(42, 13);
             this.label1.TabIndex = 0;
-            this.label1.Text = "Credits!";
+            this.label1.Text = "Switch Toolbox 2";
             // 
             // label2
             // 
@@ -55,7 +55,7 @@
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(149, 13);
             this.label2.TabIndex = 1;
-            this.label2.Text = "Main Developer: KillzXGaming";
+            this.label2.Text = "Maintainer: Timexo";
             this.label2.Click += new System.EventHandler(this.label2_Click);
             // 
             // label3
@@ -66,7 +66,7 @@
             this.label3.Name = "label3";
             this.label3.Size = new System.Drawing.Size(169, 13);
             this.label3.TabIndex = 2;
-            this.label3.Text = "Special Thanks and Contributions:";
+            this.label3.Text = "Original project by KillzXGaming and contributors:";
             this.label3.Click += new System.EventHandler(this.label3_Click);
             // 
             // richTextBox1

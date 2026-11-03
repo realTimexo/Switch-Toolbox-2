@@ -52,6 +52,41 @@ namespace Toolbox.Library.Forms
             SetTheme();
             SetDevices();
             audioListView.FillLastColumnSpace(true);
+            var audioContextMenu = new ContextMenuStrip();
+            var importWaveItem = new ToolStripMenuItem("Import WAV...");
+            importWaveItem.Click += ImportWaveToBinaryWave;
+            audioContextMenu.Items.Add(importWaveItem);
+            audioContextMenu.Opening += (sender, args) =>
+            {
+                var source = selectedFile == null ? null : selectedFile.vgAdudioFile;
+                importWaveItem.Enabled = source != null && source.Format != null &&
+                    source.Format.Extension.Any(ext => ext.Equals("*.bwav", StringComparison.OrdinalIgnoreCase));
+            };
+            audioListView.ContextMenuStrip = audioContextMenu;
+        }
+
+        private void ImportWaveToBinaryWave(object sender, EventArgs e)
+        {
+            var target = selectedFile == null ? null : selectedFile.vgAdudioFile;
+            if (target == null || target.Format == null ||
+                !target.Format.Extension.Any(ext => ext.Equals("*.bwav", StringComparison.OrdinalIgnoreCase)))
+                return;
+
+            using (var dialog = new OpenFileDialog { Filter = "Wave audio (*.wav)|*.wav", CheckFileExists = true })
+            {
+                if (dialog.ShowDialog() != DialogResult.OK) return;
+                try
+                {
+                    using (var input = File.OpenRead(dialog.FileName))
+                        target.audioData = new WaveReader().ReadWithConfig(input).Audio;
+                    LoadFile(target.audioData, (IFileFormat)target);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(this, "The WAV file could not be imported: " + ex.Message,
+                        "Switch Toolbox 2", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
         }
 
         #region File Open

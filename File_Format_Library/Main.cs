@@ -375,6 +375,7 @@ namespace FirstPlugin
             Formats.Add(typeof(BRSTM));
             Formats.Add(typeof(BFWAV));
             Formats.Add(typeof(BCWAV));
+            Formats.Add(typeof(BWAV));
             Formats.Add(typeof(BRWAV));
             Formats.Add(typeof(WAV));
             Formats.Add(typeof(MP3));
