@@ -1,6 +1,6 @@
 <div align="center">
 
-![Switch Toolbox 2](logo-new.png)
+<img src="logo-new.png" alt="Switch Toolbox 2" width="200" >
 
 # Switch Toolbox 2
 
