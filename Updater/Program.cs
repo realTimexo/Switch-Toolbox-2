@@ -143,9 +143,10 @@ namespace Updater
             foreach (Release latest in releases)
             {
                 Console.WriteLine("Checking Update");
+                ReleaseAsset asset = GetReleaseAsset(latest);
                 if (!foundRelease)
                 {
-                    if (!latest.Assets[0].UpdatedAt.ToString().Equals(CompileDate))
+                    if (asset != null && !asset.UpdatedAt.ToString().Equals(CompileDate))
                     {
                         Console.WriteLine("Downloading release...");
                         bool IsDownloaded = DownloadedProgram(latest);
@@ -161,10 +162,14 @@ namespace Updater
         }
         static bool DownloadedProgram(Release release)
         {
+            ReleaseAsset asset = GetReleaseAsset(release);
+            if (asset == null)
+                return false;
+
             return DownloadRelease("master",
-                release.Assets[0].BrowserDownloadUrl,
+                asset.BrowserDownloadUrl,
                 release.TagName,
-                release.Assets[0].UpdatedAt.ToString(),
+                asset.UpdatedAt.ToString(),
                 release.TargetCommitish);
         }
         static bool DownloadRelease(string downloadName, string url, string ProgramVersion, string CompileDate, string CommitInfo)
@@ -201,8 +206,18 @@ namespace Updater
         {
             List<Release> Releases = new List<Release>();
             foreach (Release r in await client.Repository.Release.GetAll("realTimexo", "Switch-Toolbox-2"))
-                Releases.Add(r);
+            {
+                if (!r.Draft && !r.Prerelease && GetReleaseAsset(r) != null)
+                    Releases.Add(r);
+            }
             releases = Releases.ToArray();
+        }
+
+        static ReleaseAsset GetReleaseAsset(Release release)
+        {
+            return release?.Assets?.FirstOrDefault(asset =>
+                asset.Name.StartsWith("SwitchToolbox2-", StringComparison.OrdinalIgnoreCase) &&
+                asset.Name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase));
         }
     }
 }

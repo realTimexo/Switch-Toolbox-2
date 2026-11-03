@@ -2,6 +2,13 @@
 
 Notable changes to Switch Toolbox 2 are listed here. Dates use ISO format.
 
+## Unreleased
+
+- Bundle and preload architecture-matched VC runtimes required by native Tegra texture swizzling.
+- Add **Save As** to the archive right-click menu and keep it separate from the existing Save action.
+- Check the latest stable release in the Switch Toolbox 2 repository and install its versioned ZIP asset.
+- Show release notes in the update prompt, simplify the titlebar, update the in-app tutorial link, and reduce the README logo size.
+
 ## V1.0.0 — 2026-11-03
 
 ### Added
@@ -27,9 +34,8 @@ Notable changes to Switch Toolbox 2 are listed here. Dates use ISO format.
 
 ### Known issues and limitations
 
-- The supplied `TestFile2Model.zs` still encounters the BFRES parser exception in `MaterialParserV10.ShaderInfo.SetupOptionBooleans`.
-- The reported BNTX texture-loading hang for `TitleLogoL_00^w` from `TestFile1.zs` remains unresolved.
-- BWAV playback and conversion code compiles, but WAV↔BWAV output has not yet been round-trip tested against representative files.
+- Some native texture-decoding dependencies may not be present on a clean Windows installation; later builds bundle the matching VC runtime.
+- BWAV uses lossy DSP-ADPCM encoding, so imported WAV audio can sound different from the source depending on the material and encoder settings.
 - Compatibility with Nintendo Switch 2 game assets is not comprehensive or guaranteed; support depends on each format parser and should be validated per file.
 
 ### License

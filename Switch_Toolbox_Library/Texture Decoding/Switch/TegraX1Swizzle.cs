@@ -1,11 +1,40 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Runtime.InteropServices;
 
 namespace Toolbox.Library
 {
     public class TegraX1Swizzle
     {
+        // The native swizzle library depends on the Microsoft VC runtime. Load the
+        // matching app-local copy first so Windows can resolve that dependency.
+        private static readonly IntPtr BundledRuntimeHandle = LoadBundledRuntime();
+
+        [DllImport("kernel32.dll", EntryPoint = "LoadLibraryW", CharSet = CharSet.Unicode,
+            ExactSpelling = true, SetLastError = true)]
+        private static extern IntPtr LoadLibrary(string fileName);
+
+        private static IntPtr LoadBundledRuntime()
+        {
+            string architecture = Environment.Is64BitProcess ? "win-x64" : "win-x86";
+            string runtimePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory,
+                "NativeRuntime", architecture, "vcruntime140.dll");
+
+            if (!File.Exists(runtimePath))
+                return IntPtr.Zero; // Keep allowing machines with the runtime installed globally.
+
+            IntPtr handle = LoadLibrary(runtimePath);
+            if (handle == IntPtr.Zero)
+            {
+                int error = Marshal.GetLastWin32Error();
+                throw new DllNotFoundException(
+                    $"Could not load bundled VC runtime '{runtimePath}' (Win32 error {error}).");
+            }
+
+            return handle;
+        }
+
         // Swizzle code and surface calculations are performed using an efficient Rust implementation.
         // C# code can call the Rust code using the library's C API.
         // Github: https://github.com/ScanMountGoat/tegra_swizzle

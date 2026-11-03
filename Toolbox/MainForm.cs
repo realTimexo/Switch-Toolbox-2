@@ -188,8 +188,7 @@ namespace Toolbox
         bool UsePrompt = true;
         private void Application_Idle(object sender, EventArgs e)
         {
-            if (UpdateProgram.CanUpdate && Runtime.EnableVersionCheck && UsePrompt &&
-                UpdateProgram.CommitList.Count > 0)
+            if (UpdateProgram.CanUpdate && Runtime.EnableVersionCheck && UsePrompt)
             {
                 updateToolstrip.Enabled = true;
                 UsePrompt = false;
@@ -203,7 +202,10 @@ namespace Toolbox
                 return;
 
             var dialog = new GithubUpdateDialog();
-            dialog.LoadCommits(UpdateProgram.CommitList);
+            if (UpdateProgram.LatestRelease != null)
+                dialog.LoadReleaseNotes(UpdateProgram.LatestRelease);
+            else
+                dialog.LoadCommits(UpdateProgram.CommitList);
             if (dialog.ShowDialog() == DialogResult.Yes)
             {
                 UpdateApplication();
@@ -649,12 +651,10 @@ namespace Toolbox
 
         private void UpdateToolbar(bool DisplayVersion)
         {
-            string commit = $"Commit: {Runtime.CommitInfo}";
-            var asssemblyVersion = Assembly.GetExecutingAssembly().GetName().Version;
-            if (DisplayVersion)
-                Text = $"{Application.ProductName} | Version: {Runtime.ProgramVersion} | {commit} | Compile Date: {Runtime.CompileDate} Assembly {asssemblyVersion}";
-            else
-                Text = $"{Application.ProductName}";
+            string version = string.IsNullOrWhiteSpace(Runtime.ProgramVersion)
+                ? Assembly.GetExecutingAssembly().GetName().Version.ToString()
+                : Runtime.ProgramVersion.Trim().TrimStart('v', 'V');
+            Text = $"Switch Toolbox 2 | {version}";
         }
 
         private void LoadPLugins()
@@ -1357,7 +1357,7 @@ namespace Toolbox
         }
 
         private void tutorialToolStripMenuItem_Click(object sender, EventArgs e) {
-            System.Diagnostics.Process.Start("https://github.com/KillzXGaming/Switch-Toolbox/wiki");
+            System.Diagnostics.Process.Start("https://github.com/realTimexo/Switch-Toolbox-2#readme");
         }
 
         private void checkShaderErrorsToolStripMenuItem_Click(object sender, EventArgs e)

@@ -310,6 +310,7 @@ namespace Toolbox.Library
             var ToolStrips = new ToolStripItem[]
 {
                     new STToolStripItem("Save", SaveAction) { Enabled = ((IFileFormat)ArchiveFile).CanSave},
+                    new STToolStripItem("Save As", SaveAsAction) { Enabled = ((IFileFormat)ArchiveFile).CanSave},
                     new STToolStripSeparator(),
                     new STToolStripItem("Repack", RepackAction){ Enabled = ArchiveFile.CanAddFiles },
                     new STToolStripItem("Extract All", ExtractAllAction),
@@ -405,6 +406,11 @@ namespace Toolbox.Library
         }
 
         private void SaveAction(object sender, EventArgs args)
+        {
+            Save("", true);
+        }
+
+        private void SaveAsAction(object sender, EventArgs args)
         {
             Save("", true);
         }

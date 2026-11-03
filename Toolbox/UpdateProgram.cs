@@ -39,38 +39,22 @@ namespace Toolbox
 
                 GetCommits(client).Wait();
 
-                var asssemblyVersion = Assembly.GetExecutingAssembly().GetName().Version;
-                var version = string.Concat(asssemblyVersion.ToString().Reverse().Skip(2).Reverse());
+                Release latestRelease = Releases.FirstOrDefault();
+                ReleaseAsset latestAsset = GetReleaseAsset(latestRelease);
+                if (latestRelease == null || latestAsset == null)
+                    return;
 
-                var lastestRelease = Releases.FirstOrDefault();
-                if (lastestRelease != null && lastestRelease.Assets[0].UpdatedAt.ToString() == versionCheck.CompileDate)
+                if (NormalizeVersion(versionCheck.ProgramVersion) == NormalizeVersion(latestRelease.TagName))
                 {
-                    Runtime.ProgramVersion = lastestRelease.TagName;
-                    Runtime.CompileDate = lastestRelease.Assets[0].UpdatedAt.ToString();
-                    Runtime.CommitInfo = lastestRelease.TargetCommitish;
+                    Runtime.ProgramVersion = latestRelease.TagName;
+                    Runtime.CompileDate = latestAsset.UpdatedAt.ToString();
+                    Runtime.CommitInfo = latestRelease.TargetCommitish;
                     return;
                 }
 
-                foreach (Release latest in Releases)
-                {
-                    if (latest.Assets?.Count == 0)
-                        continue;
-
-                    Console.WriteLine(
-                        "The latest release is tagged at {0} and is named {1} commit {2} date {3}",
-                        latest.TagName,
-                        latest.Name,
-                        latest.TargetCommitish,
-                        latest.Assets[0].UpdatedAt.ToString());
-
-                    LatestReleaseTime = latest.Assets[0].UpdatedAt.DateTime;
-                    LatestRelease = latest;
-                    CanUpdate = true;
-
-                    break;
-                }
-
-                Releases.Clear();
+                LatestReleaseTime = latestAsset.UpdatedAt.DateTime;
+                LatestRelease = latestRelease;
+                CanUpdate = true;
             }
             catch (Exception ex)
             {
@@ -133,7 +117,22 @@ namespace Toolbox
         {
             Releases = new List<Release>();
             foreach (Release r in await client.Repository.Release.GetAll("realTimexo", "Switch-Toolbox-2"))
-                Releases.Add(r);
+            {
+                if (!r.Draft && !r.Prerelease && GetReleaseAsset(r) != null)
+                    Releases.Add(r);
+            }
+        }
+
+        private static ReleaseAsset GetReleaseAsset(Release release)
+        {
+            return release?.Assets?.FirstOrDefault(asset =>
+                asset.Name.StartsWith("SwitchToolbox2-", StringComparison.OrdinalIgnoreCase) &&
+                asset.Name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase));
+        }
+
+        private static string NormalizeVersion(string version)
+        {
+            return string.IsNullOrWhiteSpace(version) ? string.Empty : version.Trim().TrimStart('v', 'V');
         }
     }
 }

@@ -23,6 +23,7 @@ namespace Toolbox
         public void LoadCommits(List<GitHubCommit> Commits)
         {
             ActiveCommitList = Commits;
+            listViewCustom1.Items.Clear();
             foreach (var commit in Commits)
             {
 
@@ -30,12 +31,21 @@ namespace Toolbox
             }
         }
 
+        public void LoadReleaseNotes(Release release)
+        {
+            ActiveCommitList = null;
+            listViewCustom1.Items.Clear();
+            stTextBox1.Text = release.Body ?? string.Empty;
+            Text = $"Switch Toolbox 2 update: {release.TagName}";
+        }
+
         private void listViewCustom1_SelectedIndexChanged(object sender, EventArgs e)
         {
             if (listViewCustom1.SelectedIndices.Count > 0)
             {
                 int index = listViewCustom1.SelectedIndices[0];
-                stTextBox1.Text = ActiveCommitList[index].Commit.Message;
+                if (ActiveCommitList != null && index < ActiveCommitList.Count)
+                    stTextBox1.Text = ActiveCommitList[index].Commit.Message;
             }
         }
     }

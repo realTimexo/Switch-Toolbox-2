@@ -20,6 +20,21 @@ jobs:
         run: nuget restore Toolbox.sln
       - name: Build Release
         run: msbuild Toolbox.sln /m /p:Configuration=Release /p:Platform="Any CPU" /p:RestorePackages=false
+      - name: Bundle VC runtime for Tegra swizzle
+        shell: pwsh
+        run: |
+          $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Installer\vswhere.exe'
+          $vsInstall = & $vswhere -latest -products '*' -property installationPath
+          $redistRoot = Join-Path $vsInstall 'VC\Redist\MSVC'
+          $runtimeFiles = Get-ChildItem -Path $redistRoot -Filter vcruntime140.dll -File -Recurse -ErrorAction SilentlyContinue
+          $output = Join-Path $PWD 'Toolbox/bin/Release'
+          foreach ($arch in @('x64', 'x86')) {
+            $runtime = $runtimeFiles | Where-Object { $_.FullName -match "\\$arch\\Microsoft\.VC\d+\.CRT\\vcruntime140\.dll$" } | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+            if (!$runtime) { throw "Could not locate the $arch vcruntime140.dll redistributable." }
+            $destination = Join-Path $output "NativeRuntime/win-$arch"
+            New-Item -ItemType Directory -Force -Path $destination | Out-Null
+            Copy-Item $runtime.FullName (Join-Path $destination 'vcruntime140.dll') -Force
+          }
       - name: Package build output
         shell: pwsh
         run: |

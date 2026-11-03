@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="logo-new.png" alt="Switch Toolbox 2" width="200" >
+<img src="logo-new.png" alt="Switch Toolbox 2" width="180" >
 
 # Switch Toolbox 2
 
