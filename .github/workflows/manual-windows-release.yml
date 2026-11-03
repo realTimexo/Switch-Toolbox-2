@@ -50,6 +50,25 @@ jobs:
             Copy-Item $runtime.FullName (Join-Path $destination 'vcruntime140.dll') -Force
           }
 
+      - name: Verify x64 Tegra swizzle dependencies load
+        shell: pwsh
+        run: |
+          Add-Type -TypeDefinition @"
+          using System;
+          using System.Runtime.InteropServices;
+          public static class SwizzleLoadProbe {
+              [DllImport("kernel32.dll", EntryPoint = "LoadLibraryW", CharSet = CharSet.Unicode, SetLastError = true)]
+              public static extern IntPtr LoadLibrary(string path);
+          }
+          "@
+          $output = Join-Path $PWD 'Toolbox/bin/Release'
+          $runtime = Join-Path $output 'NativeRuntime/win-x64/vcruntime140.dll'
+          $swizzle = Join-Path $output 'tegra_swizzle_x64.dll'
+          foreach ($path in @($runtime, $swizzle)) {
+            $handle = [SwizzleLoadProbe]::LoadLibrary($path)
+            if ($handle -eq [IntPtr]::Zero) { throw "Native DLL failed to load: $path (Win32 $([Runtime.InteropServices.Marshal]::GetLastWin32Error()))" }
+          }
+
       - name: Package application
         shell: pwsh
         env:
