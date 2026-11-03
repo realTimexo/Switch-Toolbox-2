@@ -2,12 +2,14 @@
 
 Notable changes to Switch Toolbox 2 are listed here. Dates use ISO format.
 
-## Unreleased
+## V1.0.1 - 2026-11-03
 
 - Bundle and preload architecture-matched VC runtimes required by native Tegra texture swizzling.
 - Add **Save As** to the archive right-click menu and keep it separate from the existing Save action.
 - Check the latest stable release in the Switch Toolbox 2 repository and install its versioned ZIP asset.
 - Show release notes in the update prompt, simplify the titlebar, update the in-app tutorial link, and reduce the README logo size.
+- Fixed high pitch bwav sound playback
+- Compeleted _Combined.btnx file support for Switch 2
 
 ## V1.0.0 — 2026-11-03
 
