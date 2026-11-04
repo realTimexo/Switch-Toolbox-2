@@ -2,6 +2,22 @@
 
 Notable changes to Switch Toolbox 2 are listed here. Dates use ISO format.
 
+## V1.1.1 - 2026-11-04
+
+### Fixed
+
+- Pad encoded DSP-ADPCM channel data to the complete 8-byte frame length required by the BWAV sample count. This fixes BWAV exports whose final channel ended one byte before the declared frame boundary.
+
+### Changed
+
+- Replace the Save, Update, and AAMP UI icons with the designs supplied for this update.
+- Set the application assembly and packaged version metadata to `1.1.1.0` / `1.1.1`, above the released v1.1.0.
+
+### Verification
+
+- The supplied failing BWAV declares 7,618,560 samples per channel, for which the decoder requires 4,353,464 encoded bytes. Its final channel contained 4,353,463 bytes; the encoder now pads the shortfall to the required 8-byte frame boundary.
+- Windows compilation and BWAV round-trip testing are pending for this update.
+
 ## V1.1.0 - 2026-11-04
 
 ### Added

@@ -164,6 +164,9 @@ namespace FirstPlugin
                 short[] samples = pcm.Channels[channel];
                 coefficients[channel] = GcAdpcmCoefficients.CalculateCoefficients(samples);
                 encoded[channel] = GcAdpcmEncoder.Encode(samples, coefficients[channel]);
+                int requiredLength = checked(((sampleCount + 13) / 14) * 8);
+                if (encoded[channel].Length < requiredLength)
+                    Array.Resize(ref encoded[channel], requiredLength);
                 offsets[channel] = position;
                 position = Align(checked(position + (uint)encoded[channel].Length), 0x40);
             }
