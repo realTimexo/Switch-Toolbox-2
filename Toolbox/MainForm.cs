@@ -53,6 +53,14 @@ namespace Toolbox
         public MainForm()
         {
             InitializeComponent();
+            try
+            {
+                Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
+            }
+            catch
+            {
+                // Keep the designer-provided icon if extraction is unavailable.
+            }
         }
 
         public void UpdateForm()
@@ -284,7 +292,21 @@ namespace Toolbox
 
             SaveRecentFile(FileName);
 
-            object file = STFileLoader.OpenFileFormat(FileName);
+            object file;
+            try
+            {
+                file = STFileLoader.OpenFileFormat(FileName);
+            }
+            catch (Exception ex)
+            {
+                Cursor.Current = Cursors.Default;
+                STConsole.WriteLine($"Failed to open '{FileName}': {ex}");
+                MessageBox.Show(this,
+                    "This file could not be opened. The format may be unsupported or malformed. " +
+                    "The error was recorded in the application console.\n\n" + ex.Message,
+                    "Switch Toolbox 2 - Open failed", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
             if (file == null) //File might not be supported so return
             {
                 STConsole.WriteLine($"{FileName} not supported.");

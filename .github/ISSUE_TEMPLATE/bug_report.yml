@@ -1,0 +1,59 @@
+name: Bug report
+description: Report a reproducible bug in Switch Toolbox 2.
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please search existing issues first. Do not upload copyrighted game files, keys, or other private content. Screenshots and sanitized error logs are welcome.
+  - type: input
+    id: version
+    attributes:
+      label: Switch Toolbox 2 version
+      description: Include the release/tag or assembly version.
+      placeholder: 1.0.1
+    validations:
+      required: true
+  - type: input
+    id: windows
+    attributes:
+      label: Windows version and system architecture
+      placeholder: Windows 11 24H2, x64
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Include the file type and the exact actions that trigger the problem. Do not attach copyrighted game files.
+      placeholder: 1. Open the application…
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Error details or sanitized logs
+      description: Remove usernames, paths, keys, and other personal or sensitive data before posting.
+      render: text
+    validations:
+      required: false
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched existing issues and removed private or copyrighted data from this report.
+          required: true

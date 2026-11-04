@@ -81,8 +81,16 @@ jobs:
           New-Item -ItemType Directory -Force -Path $stage | Out-Null
           Copy-Item -Path (Join-Path $output '*') -Destination $stage -Recurse -Force
           Copy-Item README.md, LICENSE, logo-new.png -Destination $stage -Force
+          Get-ChildItem -Path $stage -Filter '*.zip' -File -Recurse | Remove-Item -Force
+          if (!(Test-Path (Join-Path $stage 'Toolbox.exe'))) { throw 'Toolbox.exe must be at the ZIP root.' }
           $zip = "SwitchToolbox2-$($env:VERSION_NAME).zip"
           Compress-Archive -Path (Join-Path $stage '*') -DestinationPath $zip -Force
+          Add-Type -AssemblyName System.IO.Compression.FileSystem
+          $archive = [System.IO.Compression.ZipFile]::OpenRead((Join-Path $PWD $zip))
+          try {
+            if (!$archive.Entries.FullName.Contains('Toolbox.exe')) { throw 'The ZIP does not contain Toolbox.exe at its root.' }
+            if ($archive.Entries | Where-Object { $_.FullName -match '(^|/)SwitchToolbox2-[^/]+\.zip$' }) { throw 'Nested ZIP packages are not allowed.' }
+          } finally { $archive.Dispose() }
           "ZIP_PATH=$zip" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
           "RELEASE_TAG=v$($env:VERSION_NAME)" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
 

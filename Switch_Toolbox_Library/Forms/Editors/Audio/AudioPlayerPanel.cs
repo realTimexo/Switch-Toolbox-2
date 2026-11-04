@@ -54,15 +54,47 @@ namespace Toolbox.Library.Forms
             audioListView.FillLastColumnSpace(true);
             var audioContextMenu = new ContextMenuStrip();
             var importWaveItem = new ToolStripMenuItem("Import WAV...");
+            var exportBinaryWaveItem = new ToolStripMenuItem("Export BWAV...");
             importWaveItem.Click += ImportWaveToBinaryWave;
+            exportBinaryWaveItem.Click += ExportBinaryWave;
             audioContextMenu.Items.Add(importWaveItem);
+            audioContextMenu.Items.Add(exportBinaryWaveItem);
             audioContextMenu.Opening += (sender, args) =>
             {
                 var source = selectedFile == null ? null : selectedFile.vgAdudioFile;
-                importWaveItem.Enabled = source != null && source.Format != null &&
+                bool isBinaryWave = source != null && source.Format != null &&
                     source.Format.Extension.Any(ext => ext.Equals("*.bwav", StringComparison.OrdinalIgnoreCase));
+                importWaveItem.Enabled = isBinaryWave;
+                exportBinaryWaveItem.Enabled = isBinaryWave;
             };
             audioListView.ContextMenuStrip = audioContextMenu;
+        }
+
+        private void ExportBinaryWave(object sender, EventArgs e)
+        {
+            var target = selectedFile == null ? null : selectedFile.vgAdudioFile as FirstPlugin.BWAV;
+            if (target == null || target.audioData == null) return;
+
+            using (var dialog = new SaveFileDialog
+            {
+                Filter = "Nintendo AAL Binary Wave (*.bwav)|*.bwav",
+                DefaultExt = "bwav",
+                AddExtension = true,
+                FileName = Path.GetFileNameWithoutExtension(selectedFile.Title) + ".bwav"
+            })
+            {
+                if (dialog.ShowDialog() != DialogResult.OK) return;
+                try
+                {
+                    using (var output = File.Create(dialog.FileName))
+                        target.Save(output);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(this, "The BWAV file could not be exported: " + ex.Message,
+                        "Switch Toolbox 2", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
         }
 
         private void ImportWaveToBinaryWave(object sender, EventArgs e)

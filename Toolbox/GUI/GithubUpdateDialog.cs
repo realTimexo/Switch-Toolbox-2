@@ -26,8 +26,13 @@ namespace Toolbox
             listViewCustom1.Items.Clear();
             foreach (var commit in Commits)
             {
-
-                listViewCustom1.Items.Add(commit.Commit.Message).SubItems.Add(commit.Commit.Author.Date.LocalDateTime.ToString());
+                var item = listViewCustom1.Items.Add(FirstLine(commit.Commit.Message));
+                item.SubItems.Add(commit.Commit.Author.Date.LocalDateTime.ToString("g"));
+            }
+            if (Commits.Count > 0)
+            {
+                stTextBox1.Text = Commits[0].Commit.Message;
+                listViewCustom1.Items[0].Selected = true;
             }
         }
 
@@ -35,8 +40,17 @@ namespace Toolbox
         {
             ActiveCommitList = null;
             listViewCustom1.Items.Clear();
-            stTextBox1.Text = release.Body ?? string.Empty;
-            Text = $"Switch Toolbox 2 update: {release.TagName}";
+            var item = listViewCustom1.Items.Add(release.Name ?? release.TagName ?? "New release");
+            item.SubItems.Add(release.PublishedAt.HasValue ? release.PublishedAt.Value.LocalDateTime.ToString("g") : "Date unavailable");
+            item.Selected = true;
+            stTextBox1.Text = string.IsNullOrWhiteSpace(release.Body) ? "No release notes were provided." : release.Body;
+            Text = $"Switch Toolbox 2 update: {release.TagName ?? release.Name}";
+        }
+
+        private static string FirstLine(string text)
+        {
+            if (string.IsNullOrWhiteSpace(text)) return "(no message)";
+            using (var reader = new System.IO.StringReader(text)) return reader.ReadLine();
         }
 
         private void listViewCustom1_SelectedIndexChanged(object sender, EventArgs e)

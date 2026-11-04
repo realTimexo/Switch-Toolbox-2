@@ -62,7 +62,15 @@ jobs:
           New-Item -ItemType Directory -Force -Path $stage | Out-Null
           Copy-Item -Path (Join-Path $output '*') -Destination $stage -Recurse -Force
           Copy-Item README.md, LICENSE, logo-new.png -Destination $stage -Force
+          Get-ChildItem -Path $stage -Filter '*.zip' -File -Recurse | Remove-Item -Force
+          if (!(Test-Path (Join-Path $stage 'Toolbox.exe'))) { throw 'Toolbox.exe must be at the ZIP root.' }
           Compress-Archive -Path (Join-Path $stage '*') -DestinationPath 'SwitchToolbox2-build.zip' -Force
+          Add-Type -AssemblyName System.IO.Compression.FileSystem
+          $archive = [System.IO.Compression.ZipFile]::OpenRead((Join-Path $PWD 'SwitchToolbox2-build.zip'))
+          try {
+            if (!$archive.Entries.FullName.Contains('Toolbox.exe')) { throw 'The ZIP does not contain Toolbox.exe at its root.' }
+            if ($archive.Entries | Where-Object { $_.FullName -match '(^|/)SwitchToolbox2-[^/]+\.zip$' }) { throw 'Nested ZIP packages are not allowed.' }
+          } finally { $archive.Dispose() }
       - name: Upload Windows ZIP
         uses: actions/upload-artifact@v4
         with:
