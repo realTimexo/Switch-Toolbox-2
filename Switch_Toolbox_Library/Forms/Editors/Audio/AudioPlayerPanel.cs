@@ -88,7 +88,7 @@ namespace Toolbox.Library.Forms
                 try
                 {
                     using (var output = File.Create(dialog.FileName))
-                        target.Save(output);
+                        ((IFileFormat)target).Save(output);
                 }
                 catch (Exception ex)
                 {
