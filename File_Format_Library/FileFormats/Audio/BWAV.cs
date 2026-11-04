@@ -279,7 +279,7 @@ namespace FirstPlugin
             return decoded;
         }
 
-        private static byte[] Encode(AudioData input)
+        private byte[] Encode(AudioData input)
         {
             if (input == null) throw new InvalidOperationException("No audio data is loaded.");
             IAudioFormat source = input.GetAllFormats().FirstOrDefault();
