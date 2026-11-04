@@ -2,6 +2,26 @@
 
 Notable changes to Switch Toolbox 2 are listed here. Dates use ISO format.
 
+## V1.1.0 - 2026-11-04
+
+### Added
+
+- Add **Export BWAV...** to the audio editor's right-click menu for BWAV files.
+- Add GitHub issue forms for bug reports and feature requests.
+
+### Changed
+
+- Package Windows builds with the application files directly at the ZIP root and reject nested ZIP packages.
+- Update the application icon and title-bar icon to the Switch Toolbox 2 logo.
+- Set the application assembly and packaged version metadata to `1.0.1.0`.
+- Show release name, publication date, and release notes more clearly in the update dialog.
+- Catch file-opening exceptions and report them without terminating the application.
+
+### Verification and limitations
+
+- The Windows CI build completed successfully, and the generated ZIP was checked for archive integrity, a root-level `Toolbox.exe`, and no nested ZIP files.
+- The BFRES `ShaderInfo.SetupOptionBooleans` parser failure remains a format-compatibility limitation; the file-opening change prevents the parser exception from closing the whole application but does not fix the parser.
+
 ## V1.0.1 - 2026-11-03
 
 - Bundle and preload architecture-matched VC runtimes required by native Tegra texture swizzling.
