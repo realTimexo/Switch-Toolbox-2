@@ -72,8 +72,9 @@ namespace Toolbox.Library.Forms
 
         private void ExportBinaryWave(object sender, EventArgs e)
         {
-            var target = selectedFile == null ? null : selectedFile.vgAdudioFile as FirstPlugin.BWAV;
-            if (target == null || target.audioData == null) return;
+            var target = selectedFile == null ? null : selectedFile.vgAdudioFile;
+            if (target == null || target.audioData == null || target.Format == null ||
+                !target.Format.Extension.Any(ext => ext.Equals("*.bwav", StringComparison.OrdinalIgnoreCase))) return;
 
             using (var dialog = new SaveFileDialog
             {
