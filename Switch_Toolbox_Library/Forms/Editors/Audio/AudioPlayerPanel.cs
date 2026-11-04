@@ -55,9 +55,17 @@ namespace Toolbox.Library.Forms
             var audioContextMenu = new ContextMenuStrip();
             var importWaveItem = new ToolStripMenuItem("Import WAV...");
             var exportBinaryWaveItem = new ToolStripMenuItem("Export BWAV...");
+            var settingsItem = new ToolStripMenuItem("BWAV export settings...");
             importWaveItem.Click += ImportWaveToBinaryWave;
             exportBinaryWaveItem.Click += ExportBinaryWave;
+            settingsItem.Click += (sender, args) =>
+            {
+                var target = selectedFile == null ? null : selectedFile.vgAdudioFile;
+                var settings = target == null ? null : target.Format as IBinaryWaveSettings;
+                if (settings != null) settings.EditSettings(this);
+            };
             audioContextMenu.Items.Add(importWaveItem);
+            audioContextMenu.Items.Add(settingsItem);
             audioContextMenu.Items.Add(exportBinaryWaveItem);
             audioContextMenu.Opening += (sender, args) =>
             {
@@ -66,6 +74,7 @@ namespace Toolbox.Library.Forms
                     source.Format.Extension.Any(ext => ext.Equals("*.bwav", StringComparison.OrdinalIgnoreCase));
                 importWaveItem.Enabled = isBinaryWave;
                 exportBinaryWaveItem.Enabled = isBinaryWave;
+                settingsItem.Enabled = isBinaryWave && source.Format is IBinaryWaveSettings;
             };
             audioListView.ContextMenuStrip = audioContextMenu;
         }
@@ -186,50 +195,38 @@ namespace Toolbox.Library.Forms
             if (fileFormat is VGAdudioFile)
                 file.vgAdudioFile = (VGAdudioFile)fileFormat;
 
-            //Loop through each channel and set it's own 
+            //The first entry is the full interleaved signal; subsequent entries let the user audition each speaker channel.
             var format = audioData.GetAllFormats().ToArray()[0];
+            AddPlaybackChannel(file, "All channels", format.ToPcm16());
             for (int c = 0; c < format.ChannelCount; c++)
             {
-                using (var memWav = new MemoryStream())
-                {
-                    AudioChannel audioChannel = new AudioChannel();
-                    audioChannel.Name = $"Channel [{c}]";
-                    file.Channels.Add(audioChannel);
-
-                    //Load data and write to stream
-                    var audio = format.GetChannels(c).ToPcm16();
-                    var writer = new WaveWriter();
-                    writer.WriteToStream(audio, memWav);
-                    audioChannel.Data = memWav.ToArray();
-
-                    memWav.Position = 0;
-
-                    //Load the player
-                     audioChannel.audioPlayer.Open(new MemoryStream(audioChannel.Data),"test.wav", activeDevice);
-
-               /*     OpenFileDialog openFileDialog = new OpenFileDialog();
-                    if (openFileDialog.ShowDialog() == DialogResult.OK)
-                    {
-                        audioChannel.audioPlayer.Open(openFileDialog.FileName, activeDevice);
-                    }*/
-
-
-                    audioChannel.audioPlayer.PlaybackStopped += (s, args) =>
-                    {
-                        //WasapiOut uses SynchronizationContext.Post to raise the event
-                        //There might be already a new WasapiOut-instance in the background when the async Post method brings the PlaybackStopped-Event to us.
-                        if (audioChannel.audioPlayer.PlaybackState != PlaybackState.Stopped)
-                        {
-
-                        }
-                    };
-                }
+                string name = $"Channel [{c}]";
+                var bwavSettings = fileFormat as IBinaryWaveSettings;
+                if (bwavSettings != null && bwavSettings.TargetChannelPans != null && c < bwavSettings.TargetChannelPans.Length)
+                    name = bwavSettings.TargetChannelPans[c] == 0 ? $"Channel [{c}] - Left" :
+                        bwavSettings.TargetChannelPans[c] == 1 ? $"Channel [{c}] - Right" : $"Channel [{c}] - Center";
+                AddPlaybackChannel(file, name, format.GetChannels(c).ToPcm16());
             }
 
             audioListView.AddObject(file);
 
             if (audioListView.Items.Count != 0)
                 audioListView.SelectedIndex = 0;
+        }
+
+        private void AddPlaybackChannel(AudioFile file, string name, VGAudio.Formats.Pcm16.Pcm16Format audio)
+        {
+            using (var wave = new MemoryStream())
+            {
+                new WaveWriter().WriteToStream(audio, wave);
+                var channel = new AudioChannel { Name = name, Data = wave.ToArray() };
+                file.Channels.Add(channel);
+                channel.audioPlayer.Open(new MemoryStream(channel.Data), "playback.wav", activeDevice);
+                channel.audioPlayer.PlaybackStopped += (s, args) =>
+                {
+                    if (channel.audioPlayer.PlaybackState != PlaybackState.Stopped) { }
+                };
+            }
         }
 
         #endregion
@@ -264,9 +261,8 @@ namespace Toolbox.Library.Forms
             }
             editToolStripMenuItem.Enabled = true;
 
-            //Load channel data
+            //Load the full mix and per-channel audition streams.
             channelCB.Items.Clear();
-            channelCB.Items.Add("Channel [All]");
             for (int i = 0; i < selectedFile.Channels.Count; i++)
             {
                 channelCB.Items.Add(selectedFile.Channels[i].Name);
@@ -514,19 +510,52 @@ namespace Toolbox.Library.Forms
 
         private void loopingToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            if (selectedFile != null && selectedFile.vgAdudioFile != null   )
+            if (selectedFile != null && selectedFile.vgAdudioFile != null)
             {
                 LoopEditor editor = new LoopEditor();
-                editor.chkCanLoop.Checked = selectedFile.vgAdudioFile.audioWithConfig.AudioFormat.Looping;
-                editor.startLoopUD.Value = (decimal)selectedFile.vgAdudioFile.audioWithConfig.AudioFormat.LoopStart;
-                editor.endLoopUD.Value = (decimal)selectedFile.vgAdudioFile.audioWithConfig.AudioFormat.LoopEnd;
+                var audioFile = selectedFile.vgAdudioFile;
+                var bwav = audioFile.Format as IBinaryWaveSettings;
+                int sampleCount = 0;
+                if (audioFile.audioData != null)
+                {
+                    var audioFormat = audioFile.audioData.GetAllFormats().FirstOrDefault();
+                    if (audioFormat != null) sampleCount = audioFormat.SampleCount;
+                }
+                editor.startLoopUD.Maximum = Math.Max(1, sampleCount);
+                editor.endLoopUD.Maximum = Math.Max(1, sampleCount);
+
+                if (bwav != null)
+                {
+                    editor.chkCanLoop.Checked = bwav.TargetLooping;
+                    editor.startLoopUD.Value = Math.Min(editor.startLoopUD.Maximum, bwav.TargetLoopStartSample);
+                    uint end = bwav.TargetLoopEndSample == uint.MaxValue || bwav.TargetLoopEndSample == 0
+                        ? (uint)sampleCount : bwav.TargetLoopEndSample;
+                    editor.endLoopUD.Value = Math.Min(editor.endLoopUD.Maximum, end);
+                }
+                else if (audioFile.audioWithConfig != null && audioFile.audioWithConfig.AudioFormat != null)
+                {
+                    editor.chkCanLoop.Checked = audioFile.audioWithConfig.AudioFormat.Looping;
+                    editor.startLoopUD.Value = Math.Min(editor.startLoopUD.Maximum, audioFile.audioWithConfig.AudioFormat.LoopStart);
+                    editor.endLoopUD.Value = Math.Min(editor.endLoopUD.Maximum, audioFile.audioWithConfig.AudioFormat.LoopEnd);
+                }
+                else return;
 
                 if (editor.ShowDialog() == DialogResult.OK)
                 {
-                    selectedFile.vgAdudioFile.audioData.SetLoop(
-                         editor.chkCanLoop.Checked,
-                    (int)editor.startLoopUD.Value,
-                    (int)editor.endLoopUD.Value);
+                    bool enabled = editor.chkCanLoop.Checked;
+                    int start = (int)editor.startLoopUD.Value;
+                    int end = (int)editor.endLoopUD.Value;
+                    if (bwav != null)
+                    {
+                        bwav.TargetLooping = enabled;
+                        bwav.TargetLoopStartSample = (uint)start;
+                        bwav.TargetLoopEndSample = (uint)end;
+                    }
+                    if (audioFile.audioData != null)
+                    {
+                        if (enabled) audioFile.audioData.SetLoop(true, start, end);
+                        else audioFile.audioData.SetLoop(false);
+                    }
                 }
             }
 
@@ -535,37 +564,46 @@ namespace Toolbox.Library.Forms
 
         private void audioDevice_SelectedIndexChanged(object sender, EventArgs e)
         {
-            if (audioDevice.SelectedItem != null && audioDevice.SelectedItem is MMDevice)
-                activeDevice = (MMDevice)audioDevice.SelectedItem;
+            if (audioDevice.SelectedItem == null || !(audioDevice.SelectedItem is MMDevice))
+                return;
+            activeDevice = (MMDevice)audioDevice.SelectedItem;
+            if (selectedFile == null || selectedFile.Channels == null)
+                return;
+
+            foreach (var channel in selectedFile.Channels)
+            {
+                if (channel.Data == null) continue;
+                var player = channel.audioPlayer;
+                PlaybackState state = player.PlaybackState;
+                TimeSpan position = player.Position;
+                int volume = player.Volume;
+                player.Open(new MemoryStream(channel.Data), "playback.wav", activeDevice);
+                player.Position = position;
+                player.Volume = volume;
+                if (state == PlaybackState.Playing) player.Play();
+                else if (state == PlaybackState.Paused) { player.Play(); player.Pause(); }
+            }
         }
 
         private void channelCB_SelectedIndexChanged(object sender, EventArgs e)
         {
-            if (selectedFile == null)
+            if (selectedFile == null || channelCB.SelectedIndex < 0 ||
+                channelCB.SelectedIndex >= selectedFile.Channels.Count ||
+                channelCB.SelectedIndex == selectedFile.SelectedChannelIndex)
                 return;
 
+            var previous = selectedFile.GetCurrentChannel();
+            PlaybackState previousState = previous.audioPlayer.PlaybackState;
+            TimeSpan previousPosition = previous.audioPlayer.Position;
+            int previousVolume = previous.audioPlayer.Volume;
             ResetPlayers();
-            if (channelCB.SelectedIndex >= 1)
-            {
-                var prevChannel = selectedFile.GetCurrentChannel();
-
-                switch (prevChannel.audioPlayer.PlaybackState)
-                {
-                    case PlaybackState.Playing:
-                        selectedFile.GetCurrentChannel().audioPlayer.Play();
-                        break;
-                    case PlaybackState.Stopped:
-                        selectedFile.GetCurrentChannel().audioPlayer.Stop();
-                        break;
-                    case PlaybackState.Paused:
-                        selectedFile.GetCurrentChannel().audioPlayer.Pause();
-                        break;
-                }
-
-                selectedFile.SelectedChannelIndex = channelCB.SelectedIndex - 1;
-                selectedFile.GetCurrentChannel().audioPlayer.Position = prevChannel.audioPlayer.Position;
-                trackbarVolume.Value = selectedFile.GetCurrentChannel().audioPlayer.Volume;
-            }
+            selectedFile.SelectedChannelIndex = channelCB.SelectedIndex;
+            var current = selectedFile.GetCurrentChannel();
+            current.audioPlayer.Position = previousPosition;
+            current.audioPlayer.Volume = previousVolume;
+            if (previousState == PlaybackState.Playing) current.audioPlayer.Play();
+            else if (previousState == PlaybackState.Paused) { current.audioPlayer.Play(); current.audioPlayer.Pause(); }
+            trackbarVolume.Value = current.audioPlayer.Volume;
         }
 
         private void btnStop_Click(object sender, EventArgs e)

@@ -2,6 +2,25 @@
 
 Notable changes to Switch Toolbox 2 are listed here. Dates use ISO format.
 
+## V1.1.2 - 2026-11-04
+
+### Fixed
+
+- Rebuild loaded audio streams when the Windows output device changes, and preserve playback position when switching between the stereo mix and individual channel previews.
+- Open the Loop Editor for BWAV files without relying on a VGAudio configuration object that BWAV does not provide. Normalize full-track loop-end sentinels for editing.
+- Preview stereo BWAV files as an interleaved stereo signal rather than treating channel 0 as the entire mix.
+
+### Added
+
+- Add BWAV export settings for sample rate, mono/stereo output, and loop points. Export resamples PCM when the selected sample rate differs and writes the requested channel mapping and loop metadata.
+- Initialize the settings editor from the current BWAV metadata.
+
+### Format notes
+
+- BWAV stores DSP-ADPCM audio, sample rate, channel pan, and loop data. PCM16 is not a BWAV codec, and playback backends such as OpenAL or cubeb are not serialized in the file. The settings dialog explains these limitations rather than writing unsupported fields.
+- The supplied `Original.zip` samples were inspected: both are 48 kHz stereo BWAV files with left/right pans. The original sample marks looping as enabled and uses `0xFFFFFFFF` as the loop end; that sentinel is now displayed as the end of the track.
+- A full Nintendo Switch 2 game playback test is not available in this build environment; game-specific pitch/double-playback behavior remains to be verified in-game.
+
 ## V1.1.1 - 2026-11-04
 
 ### Fixed

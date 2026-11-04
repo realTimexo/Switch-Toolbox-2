@@ -17,7 +17,7 @@ namespace FirstPlugin
     /// Reader/writer for Nintendo AAL Binary Wave files (BWAV).
     /// BWAV is distinct from NintendoWare BFWAV and stores each channel as DSP-ADPCM.
     /// </summary>
-    public sealed class BWAV : VGAdudioFile, IEditor<AudioPlayerPanel>, IFileFormat
+    public sealed class BWAV : VGAdudioFile, IEditor<AudioPlayerPanel>, IFileFormat, IBinaryWaveSettings
     {
         private sealed class ChannelInfo
         {
@@ -36,6 +36,13 @@ namespace FirstPlugin
         public string FileName { get; set; }
         public string FilePath { get; set; }
         public IFileInfo IFileInfo { get; set; }
+        public int TargetSampleRate { get; set; } = 48000;
+        public int TargetChannelCount { get; set; } = 2;
+        public int[] TargetChannelPans { get; set; } = new[] { 0, 1 };
+        public bool TargetLooping { get; set; }
+        public uint TargetLoopStartSample { get; set; }
+        public uint TargetLoopEndSample { get; set; }
+        public uint SourceSampleCount { get; private set; }
 
         public bool Identify(Stream stream)
         {
@@ -63,6 +70,117 @@ namespace FirstPlugin
 
         public void FillEditor(UserControl control) { ((AudioPlayerPanel)control).LoadFile(audioData, this); }
         public void Unload() { }
+
+        public bool EditSettings(IWin32Window owner)
+        {
+            using (var dialog = new Form())
+            using (var layout = new TableLayoutPanel())
+            using (var sampleRate = new NumericUpDown())
+            using (var channels = new ComboBox())
+            using (var loop = new CheckBox())
+            using (var loopStart = new NumericUpDown())
+            using (var loopEnd = new NumericUpDown())
+            using (var ok = new Button())
+            using (var cancel = new Button())
+            {
+                dialog.Text = "BWAV export settings";
+                dialog.FormBorderStyle = FormBorderStyle.FixedDialog;
+                dialog.StartPosition = FormStartPosition.CenterParent;
+                dialog.MinimizeBox = false;
+                dialog.MaximizeBox = false;
+                dialog.ShowInTaskbar = false;
+                dialog.ClientSize = new System.Drawing.Size(420, 310);
+                layout.Dock = DockStyle.Fill;
+                layout.Padding = new Padding(12);
+                layout.ColumnCount = 2;
+                layout.RowCount = 8;
+                layout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 150));
+                layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+                for (int i = 0; i < 7; i++) layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 32));
+                layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+
+                sampleRate.Minimum = 8000;
+                sampleRate.Maximum = 192000;
+                sampleRate.Increment = 1000;
+                sampleRate.Value = Math.Max(sampleRate.Minimum, Math.Min(sampleRate.Maximum, TargetSampleRate));
+                channels.DropDownStyle = ComboBoxStyle.DropDownList;
+                channels.Items.Add("Mono");
+                channels.Items.Add("Stereo");
+                channels.SelectedIndex = TargetChannelCount == 1 ? 0 : 1;
+                loop.Text = "Enable loop points";
+                loop.Checked = TargetLooping;
+                loopStart.Minimum = 0;
+                loopStart.Maximum = uint.MaxValue;
+                loopStart.Value = Math.Min((decimal)uint.MaxValue, TargetLoopStartSample);
+                loopEnd.Minimum = 0;
+                loopEnd.Maximum = uint.MaxValue;
+                uint initialEnd = TargetLoopEndSample;
+                if (initialEnd == uint.MaxValue || initialEnd == 0) initialEnd = SourceSampleCount;
+                loopEnd.Value = Math.Min((decimal)uint.MaxValue, initialEnd);
+
+                AddSettingsRow(layout, 0, "Sample rate (Hz)", sampleRate);
+                AddSettingsRow(layout, 1, "Channel layout", channels);
+                AddSettingsRow(layout, 2, "Codec", new Label { Text = "DSP-ADPCM (BWAV standard)", AutoSize = true, Anchor = AnchorStyles.Left });
+                AddSettingsRow(layout, 3, "Playback backend", new Label { Text = "Not stored in BWAV; uses selected Windows output", AutoSize = true, Anchor = AnchorStyles.Left });
+                AddSettingsRow(layout, 4, "Loop", loop);
+                AddSettingsRow(layout, 5, "Loop start (samples)", loopStart);
+                AddSettingsRow(layout, 6, "Loop end (samples)", loopEnd);
+                var buttons = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.RightToLeft };
+                ok.Text = "OK";
+                ok.DialogResult = DialogResult.OK;
+                cancel.Text = "Cancel";
+                cancel.DialogResult = DialogResult.Cancel;
+                buttons.Controls.Add(cancel);
+                buttons.Controls.Add(ok);
+                layout.Controls.Add(buttons, 0, 7);
+                layout.SetColumnSpan(buttons, 2);
+                dialog.Controls.Add(layout);
+                dialog.AcceptButton = ok;
+                dialog.CancelButton = cancel;
+
+                if (dialog.ShowDialog(owner) != DialogResult.OK) return false;
+                if (loop.Checked)
+                {
+                    if (loopEnd.Value <= loopStart.Value || loopEnd.Value > int.MaxValue)
+                    {
+                        MessageBox.Show(owner, "Loop end must be greater than loop start and fit within the audio sample range.",
+                            "BWAV settings", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        return false;
+                    }
+                    var source = audioData == null ? null : audioData.GetAllFormats().FirstOrDefault();
+                    long outputSamples = source == null ? SourceSampleCount :
+                        (long)Math.Round((double)source.SampleCount * (double)sampleRate.Value / source.SampleRate);
+                    if (outputSamples <= 0 || loopEnd.Value > outputSamples)
+                    {
+                        MessageBox.Show(owner, "Loop end exceeds the converted audio duration.",
+                            "BWAV settings", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        return false;
+                    }
+                }
+
+                TargetSampleRate = (int)sampleRate.Value;
+                TargetChannelCount = channels.SelectedIndex == 0 ? 1 : 2;
+                TargetChannelPans = TargetChannelCount == 1 ? new[] { 2 } : new[] { 0, 1 };
+                TargetLooping = loop.Checked;
+                TargetLoopStartSample = (uint)loopStart.Value;
+                TargetLoopEndSample = (uint)loopEnd.Value;
+                if (audioData != null)
+                {
+                    if (TargetLooping)
+                        audioData.SetLoop(true, checked((int)TargetLoopStartSample), checked((int)TargetLoopEndSample));
+                    else
+                        audioData.SetLoop(false);
+                }
+                return true;
+            }
+        }
+
+        private static void AddSettingsRow(TableLayoutPanel layout, int row, string title, Control value)
+        {
+            layout.Controls.Add(new Label { Text = title, AutoSize = true, Anchor = AnchorStyles.Left }, 0, row);
+            value.Dock = DockStyle.Fill;
+            layout.Controls.Add(value, 1, row);
+        }
 
         public void Load(Stream stream)
         {
@@ -94,7 +212,7 @@ namespace FirstPlugin
             return new WaveReader().ReadWithConfig(wavStream).Audio;
         }
 
-        private static AudioData Decode(byte[] bytes)
+        private AudioData Decode(byte[] bytes)
         {
             if (bytes.Length < 0x10 || bytes[0] != 'B' || bytes[1] != 'W' || bytes[2] != 'A' || bytes[3] != 'V')
                 throw new InvalidDataException("The file does not contain a valid BWAV header.");
@@ -109,7 +227,9 @@ namespace FirstPlugin
                 throw new InvalidDataException("The BWAV channel table is invalid or truncated.");
 
             var channels = new short[channelCount][];
+            var pans = new int[channelCount];
             int sampleRate = 0;
+            uint sampleCount = 0;
             for (int i = 0; i < channelCount; i++)
             {
                 int info = 0x10 + i * 0x4c;
@@ -122,6 +242,7 @@ namespace FirstPlugin
                 if (offset > bytes.Length || encodedLength > bytes.Length - (long)offset)
                     throw new InvalidDataException("A BWAV channel points outside the file.");
 
+                pans[i] = ReadUInt16(bytes, info + 2, littleEndian);
                 var coefficients = new short[16];
                 for (int c = 0; c < coefficients.Length; c++)
                     coefficients[c] = ReadInt16(bytes, info + 0x10 + c * 2, littleEndian);
@@ -137,9 +258,25 @@ namespace FirstPlugin
                 });
                 if (sampleRate == 0) sampleRate = rate;
                 else if (rate != sampleRate) throw new InvalidDataException("BWAV channels with different sample rates cannot be played together.");
+                if (i == 0) sampleCount = (uint)count;
             }
 
-            return ReadWave(new MemoryStream(CreateWave(channels, sampleRate), false));
+            TargetSampleRate = sampleRate;
+            TargetChannelCount = channelCount;
+            TargetChannelPans = pans;
+            SourceSampleCount = sampleCount;
+            uint loopEnd = ReadUInt32(bytes, 0x10 + 0x3c, littleEndian);
+            uint loopStart = ReadUInt32(bytes, 0x10 + 0x40, littleEndian);
+            bool loopFlag = ReadUInt32(bytes, 0x10 + 0x38, littleEndian) != 0;
+            uint normalizedLoopEnd = loopEnd == uint.MaxValue ? sampleCount : loopEnd;
+            TargetLooping = loopFlag && loopStart < normalizedLoopEnd && normalizedLoopEnd <= sampleCount;
+            TargetLoopStartSample = TargetLooping ? loopStart : 0;
+            TargetLoopEndSample = TargetLooping ? normalizedLoopEnd : sampleCount;
+
+            AudioData decoded = ReadWave(new MemoryStream(CreateWave(channels, sampleRate), false));
+            if (TargetLooping)
+                decoded.SetLoop(true, checked((int)TargetLoopStartSample), checked((int)TargetLoopEndSample));
+            return decoded;
         }
 
         private static byte[] Encode(AudioData input)
@@ -149,19 +286,24 @@ namespace FirstPlugin
             if (source == null || source.ChannelCount < 1 || source.ChannelCount > 64)
                 throw new InvalidDataException("The audio data has no supported channels.");
             Pcm16Format pcm = source.ToPcm16();
-            int sampleCount = pcm.SampleCount;
-            if (sampleCount < 1 || sampleCount > int.MaxValue - 14) throw new InvalidDataException("The audio sample count is invalid.");
-            int sampleRate = source.SampleRate;
+            int sourceSampleCount = pcm.SampleCount;
+            if (sourceSampleCount < 1 || sourceSampleCount > int.MaxValue - 14) throw new InvalidDataException("The audio sample count is invalid.");
+            int sourceRate = source.SampleRate;
+            int sampleRate = TargetSampleRate > 0 ? TargetSampleRate : sourceRate;
             if (sampleRate < 1 || sampleRate > 384000) throw new InvalidDataException("The audio sample rate is invalid.");
 
-            int count = pcm.Channels.Length;
+            int count = TargetChannelCount == 1 || TargetChannelCount == 2 ? TargetChannelCount : pcm.ChannelCount;
+            if (count < 1 || count > 2) throw new InvalidDataException("BWAV supports one or two channels.");
+            short[][] outputChannels = ConvertChannels(pcm.Channels, count, sampleRate, sourceRate);
+            int sampleCount = outputChannels[0].Length;
+            if (sampleCount < 1 || sampleCount > 100000000) throw new InvalidDataException("The converted audio sample count exceeds the supported BWAV limit.");
             var encoded = new byte[count][];
             var coefficients = new short[count][];
             var offsets = new uint[count];
             uint position = Align((uint)(0x10 + count * 0x4c), 0x40);
             for (int channel = 0; channel < count; channel++)
             {
-                short[] samples = pcm.Channels[channel];
+                short[] samples = outputChannels[channel];
                 coefficients[channel] = GcAdpcmCoefficients.CalculateCoefficients(samples);
                 encoded[channel] = GcAdpcmEncoder.Encode(samples, coefficients[channel]);
                 int requiredLength = checked(((sampleCount + 13) / 14) * 8);
@@ -183,16 +325,19 @@ namespace FirstPlugin
                 for (int channel = 0; channel < count; channel++)
                 {
                     writer.Write((ushort)1);
-                    writer.Write((ushort)(count == 1 ? 2 : (channel == 0 ? 0 : channel == 1 ? 1 : 2)));
+                    int pan = TargetChannelPans != null && channel < TargetChannelPans.Length
+                        ? TargetChannelPans[channel] : (count == 1 ? 2 : channel);
+                    writer.Write((ushort)(pan >= 0 && pan <= 2 ? pan : (count == 1 ? 2 : channel)));
                     writer.Write((uint)sampleRate);
                     writer.Write((uint)sampleCount);
                     writer.Write((uint)sampleCount);
                     foreach (short coefficient in coefficients[channel]) writer.Write(coefficient);
                     writer.Write(offsets[channel]); // offset in the original, full wave
                     writer.Write(offsets[channel]); // offset in this file
-                    writer.Write((uint)0);          // looping disabled
-                    writer.Write(uint.MaxValue);    // loop end sentinel
-                    writer.Write((uint)0);          // loop start
+                    bool loop = TargetLooping && TargetLoopStartSample < TargetLoopEndSample && TargetLoopEndSample <= sampleCount;
+                    writer.Write(loop ? (uint)1 : 0u);
+                    writer.Write(loop ? TargetLoopEndSample : uint.MaxValue);
+                    writer.Write(loop ? TargetLoopStartSample : 0u);
                     writer.Write((ushort)0);        // predictor/scale
                     writer.Write((short)0);          // history sample 1
                     writer.Write((short)0);          // history sample 2
@@ -209,6 +354,53 @@ namespace FirstPlugin
                 WriteUInt32(result, 8, crc);
                 return result;
             }
+        }
+
+        private static short[][] ConvertChannels(short[][] source, int targetCount, int targetRate, int sourceRate)
+        {
+            if (source == null || source.Length == 0 || source.Any(x => x == null || x.Length == 0))
+                throw new InvalidDataException("The source audio contains an empty channel.");
+            int sourceCount = source[0].Length;
+            if (source.Any(x => x.Length != sourceCount))
+                throw new InvalidDataException("All source channels must have the same sample count.");
+
+            var mapped = new short[targetCount][];
+            if (targetCount == 1 && source.Length > 1)
+            {
+                mapped[0] = new short[sourceCount];
+                for (int i = 0; i < sourceCount; i++)
+                {
+                    long sum = 0;
+                    for (int c = 0; c < source.Length; c++) sum += source[c][i];
+                    mapped[0][i] = (short)Math.Max(short.MinValue, Math.Min(short.MaxValue, sum / source.Length));
+                }
+            }
+            else
+            {
+                for (int c = 0; c < targetCount; c++)
+                    mapped[c] = source[Math.Min(c, source.Length - 1)];
+            }
+
+            if (sourceRate == targetRate) return mapped;
+            long outputCountLong = ((long)sourceCount * targetRate + sourceRate / 2) / sourceRate;
+            if (outputCountLong < 1 || outputCountLong > 100000000)
+                throw new InvalidDataException("The resampled audio duration is out of range.");
+            int outputCount = (int)outputCountLong;
+            var resampled = new short[targetCount][];
+            for (int c = 0; c < targetCount; c++)
+            {
+                resampled[c] = new short[outputCount];
+                for (int i = 0; i < outputCount; i++)
+                {
+                    double sourcePosition = (double)i * sourceRate / targetRate;
+                    int left = Math.Min((int)sourcePosition, sourceCount - 1);
+                    int right = Math.Min(left + 1, sourceCount - 1);
+                    double fraction = sourcePosition - left;
+                    double value = mapped[c][left] + (mapped[c][right] - mapped[c][left]) * fraction;
+                    resampled[c][i] = (short)Math.Max(short.MinValue, Math.Min(short.MaxValue, (int)Math.Round(value)));
+                }
+            }
+            return resampled;
         }
 
         private static byte[] CreateWave(short[][] channels, int sampleRate)

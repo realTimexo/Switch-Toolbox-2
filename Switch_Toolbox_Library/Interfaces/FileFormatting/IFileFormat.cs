@@ -54,6 +54,20 @@ namespace Toolbox.Library
         void Unload();
         IFileInfo IFileInfo { get; set; }
     }
+
+    /// <summary>Editable metadata stored by Nintendo AAL Binary Wave files.</summary>
+    public interface IBinaryWaveSettings
+    {
+        int TargetSampleRate { get; set; }
+        int TargetChannelCount { get; set; }
+        int[] TargetChannelPans { get; set; }
+        bool TargetLooping { get; set; }
+        uint TargetLoopStartSample { get; set; }
+        uint TargetLoopEndSample { get; set; }
+        uint SourceSampleCount { get; }
+        bool EditSettings(IWin32Window owner);
+    }
+
     public class IFileInfo
     {
         public ICompressionFormat FileCompression { get; set; }
