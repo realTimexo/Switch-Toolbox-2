@@ -297,16 +297,20 @@ namespace FirstPlugin
 
             public string GetText(Encoding encoding)
             {
-                return encoding.GetString(Data);
+                return encoding.GetString(Data).TrimEnd('\0');
             }
 
             public string GetOriginalText(Encoding encoding) {
-                return encoding.GetString(OriginalDataCached);
+                return encoding.GetString(OriginalDataCached).TrimEnd('\0');
             }
 
             public void SetText(string text, Encoding encoding)
             {
-                Data = encoding.GetBytes(text);
+                byte[] textData = encoding.GetBytes((text ?? string.Empty).TrimEnd('\0'));
+                byte[] terminator = encoding.GetBytes("\0");
+                Data = new byte[textData.Length + terminator.Length];
+                Buffer.BlockCopy(textData, 0, Data, 0, textData.Length);
+                Buffer.BlockCopy(terminator, 0, Data, textData.Length, terminator.Length);
             }
 
             public byte[] ToBytes(Encoding encoding, bool isBigEndian)

@@ -2,6 +2,16 @@
 
 Notable changes to Switch Toolbox 2 are listed here. Dates use ISO format.
 
+## V2.1.3 - 2026-11-06
+
+### Fixed
+
+- Preserve the final character of edited MSBT messages in game by writing an encoding-correct null terminator after edited TXT2 strings. Trailing NUL padding is hidden in the editor and normalized when a string is edited.
+
+### Verification notes
+
+- Compared the supplied original and edited Mario Kart World archives. In `Driver.msbt`, the original `Touring` entry ends with a UTF-16 NUL terminator, while the edited `Spongebob` entry does not. The [TXT2 format](https://nintendo-formats.com/libs/lms/msbt.html) specifies null-terminated messages, matching the reported missing final character. A Windows rebuild and in-game confirmation are still needed to verify the fix end-to-end.
+
 ## V2.1.2 - 2026-11-06
 
 ### Added
