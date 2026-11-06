@@ -471,6 +471,26 @@ namespace Toolbox
                             sfd.FileName = format.FileName;
                             sfd.DefaultExt = Path.GetExtension(format.FilePath);
 
+                            // Preserve the inner format extension before the .zs compression suffix.
+                            // Otherwise the format filter appends e.g. .bntx after .zs (or a second time).
+                            if (string.Equals(Path.GetExtension(format.FilePath), ".zs", StringComparison.OrdinalIgnoreCase))
+                            {
+                                string innerExtension = Path.GetExtension(Path.GetFileNameWithoutExtension(format.FilePath));
+                                if (string.IsNullOrEmpty(innerExtension) && format.Extension != null && format.Extension.Length > 0)
+                                    innerExtension = format.Extension[0].Replace("*", string.Empty);
+
+                                if (!string.IsNullOrEmpty(innerExtension))
+                                {
+                                    string compressedPattern = "*" + innerExtension + ".zs";
+                                    sfd.Filter = "Compressed original format (" + compressedPattern + ")|" + compressedPattern + "|" + sfd.Filter;
+                                    sfd.FilterIndex = 1;
+                                    sfd.DefaultExt = innerExtension.TrimStart('.') + ".zs";
+
+                                    if (string.IsNullOrEmpty(Path.GetExtension(Path.GetFileNameWithoutExtension(sfd.FileName))))
+                                        sfd.FileName = Path.GetFileNameWithoutExtension(sfd.FileName) + innerExtension + ".zs";
+                                }
+                            }
+
                             if (sfd.ShowDialog() != DialogResult.OK)
                                 return;
 

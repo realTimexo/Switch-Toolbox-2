@@ -2,6 +2,19 @@
 
 Notable changes to Switch Toolbox 2 are listed here. Dates use ISO format.
 
+## V2.1.2 - 2026-11-06
+
+### Added
+
+- Register `.msarc` with the existing SARC archive reader/writer. The supplied Mario Kart World `MsgMain.msarc` sample has a standard `SARC` signature and 15 embedded MSBT files, which remain individually identifiable by their filenames for editing and repacking.
+- Preserve the compound inner-format/compression suffix when saving `.zs` files (for example, `asset.bntx.zs`) so the selected BNTX filter no longer changes the extension order.
+- Apply the replacement Save, Update, and AAMP icons supplied in `files.zip`.
+
+### Verification notes
+
+- The supplied Mario Kart World archive was inspected: its signature is `SARC`, its archive table contains 15 files, and all 15 payloads have the MSBT `MsgStdBn` signature. This supports reusing the established SARC/MSBT handlers; an application-level edit-and-repack test still requires a Windows build.
+- The supplied `NotWorking.bwav` is malformed: both declared DSP-ADPCM channel arrays are one byte shorter than the complete frame length implied by their sample count, and its header CRC matches those truncated arrays rather than full-length channel data. The current encoder pads each channel to a complete ADPCM frame and recomputes the CRC. This is a concrete explanation for corruption in that sample, but does not by itself prove it is the sole cause of the in-game double-audio report; test a fresh export in Mario Kart World before treating playback as resolved.
+
 ## V1.1.2 - 2026-11-04
 
 ### Fixed
