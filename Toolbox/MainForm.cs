@@ -286,31 +286,6 @@ namespace Toolbox
             editor.Show();
         }
 
-        private void MainForm_DragEnter(object sender, DragEventArgs e)
-        {
-            e.Effect = e.Data != null && e.Data.GetDataPresent(DataFormats.FileDrop)
-                ? DragDropEffects.Copy
-                : DragDropEffects.None;
-        }
-
-        private void MainForm_DragDrop(object sender, DragEventArgs e)
-        {
-            if (e.Data == null || !e.Data.GetDataPresent(DataFormats.FileDrop))
-                return;
-
-            var paths = e.Data.GetData(DataFormats.FileDrop) as string[];
-            if (paths == null)
-                return;
-
-            foreach (string path in paths)
-            {
-                if (Directory.Exists(path))
-                    OpenFolder(path);
-                else if (File.Exists(path))
-                    OpenFile(path);
-            }
-        }
-
         private void OpenFileSelect()
         {
             OpenFileDialog ofd = new OpenFileDialog();
@@ -1116,30 +1091,34 @@ namespace Toolbox
 
         private void MainForm_DragEnter(object sender, DragEventArgs e)
         {
-            if (!Runtime.EnableDragDrop) return;
-
-            if (e.Data.GetDataPresent(DataFormats.FileDrop))
-                e.Effect = DragDropEffects.All;
-            else
-            {
-                String[] strGetFormats = e.Data.GetFormats();
-                e.Effect = DragDropEffects.None;
-            }
+            e.Effect = Runtime.EnableDragDrop && e.Data != null && e.Data.GetDataPresent(DataFormats.FileDrop)
+                ? DragDropEffects.Copy
+                : DragDropEffects.None;
         }
 
         private void MainForm_DragDrop(object sender, DragEventArgs e)
         {
-                        if (!Runtime.EnableDragDrop) return;
-
+            if (!Runtime.EnableDragDrop || e.Data == null || !e.Data.GetDataPresent(DataFormats.FileDrop))
+                return;
             Cursor.Current = Cursors.WaitCursor;
-
-            string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
-            foreach (string filename in files)
+            try
             {
-                OpenFile(filename);
-            }
+                string[] paths = e.Data.GetData(DataFormats.FileDrop) as string[];
+                if (paths == null)
+                    return;
 
-            Cursor.Current = Cursors.Default;
+                foreach (string path in paths)
+                {
+                    if (Directory.Exists(path))
+                        OpenFolder(path);
+                    else if (File.Exists(path))
+                        OpenFile(path);
+                }
+            }
+            finally
+            {
+                Cursor.Current = Cursors.Default;
+            }
         }
 
         #endregion
