@@ -8,6 +8,7 @@ Notable changes to Switch Toolbox 2 are listed here. Dates use ISO format.
 
 - Add a heart-image toolbar button that opens Timexo's donation page.
 - Allow files and folders to be dropped onto the main window or MDI workspace; folders open in the existing recursive file explorer.
+- Add a hierarchy-toolbar quick search for bones; it selects the existing bone node and Enter cycles through matches without changing the tree structure.
 - Document AI assistance in the README.
 
 ### Notes

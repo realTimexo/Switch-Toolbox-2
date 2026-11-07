@@ -24,6 +24,8 @@ A separate Avalonia/.NET 10 cross-platform client is being developed in [`LinuxP
 
 Use **File → Open (Folder)** to browse a directory tree, or drag a folder onto the main workspace. Dropped files open in the appropriate supported editor.
 
+In the model hierarchy, use the quick-search field to jump to a bone by name; press Enter to cycle through matches.
+
 ## Audio
 
 The application can preview supported audio formats and export audio as WAV. **BWAV** support includes playback and importing a PCM WAV from the audio editor's right-click menu, then saving the edited audio back as BWAV. BWAV is Nintendo's AAL Binary Wave format and is distinct from NintendoWare BFWAV. Its documented structure is described by [Citric Composer](https://gota7.github.io/Citric-Composer/specs/binaryWav.html); BWAV encoding and decoding here use the project's existing VGAudio codec dependency.

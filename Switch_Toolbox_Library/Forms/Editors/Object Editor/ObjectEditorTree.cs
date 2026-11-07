@@ -19,6 +19,7 @@ namespace Toolbox.Library.Forms
     public partial class ObjectEditorTree : UserControl
     {
         private bool SuppressAfterSelectEvent = false;
+        private ToolStripTextBox quickBoneSearch;
 
         private bool IsSearchPanelDocked
         {
@@ -191,6 +192,17 @@ namespace Toolbox.Library.Forms
         {
             InitializeComponent();
 
+            quickBoneSearch = new ToolStripTextBox
+            {
+                Name = "quickBoneSearch",
+                AutoSize = false,
+                Width = 132,
+                ToolTipText = "Find a bone by name; press Enter to cycle through matches."
+            };
+            stToolStrip1.Items.Insert(1, quickBoneSearch);
+            quickBoneSearch.TextChanged += QuickBoneSearch_TextChanged;
+            quickBoneSearch.KeyDown += QuickBoneSearch_KeyDown;
+
             btnPanelDisplay.ForeColor = FormThemes.BaseTheme.DisabledBorderColor;
 
             UpdateSearchPanelDockState();
@@ -208,6 +220,63 @@ namespace Toolbox.Library.Forms
                 nodeSizeCB.Items.Add(nodeSize);
 
             nodeSizeCB.SelectedIndex = 1;
+        }
+
+        private void QuickBoneSearch_TextChanged(object sender, EventArgs e)
+        {
+            string query = quickBoneSearch.Text.Trim();
+            if (query.Length == 0)
+            {
+                quickBoneSearch.ToolTipText = "Find a bone by name; press Enter to cycle through matches.";
+                return;
+            }
+
+            SelectBoneMatch(query, false);
+        }
+
+        private void QuickBoneSearch_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Enter && quickBoneSearch.Text.Trim().Length > 0)
+            {
+                SelectBoneMatch(quickBoneSearch.Text.Trim(), true);
+                e.Handled = true;
+                e.SuppressKeyPress = true;
+            }
+        }
+
+        private void SelectBoneMatch(string query, bool advance)
+        {
+            List<TreeNode> matches = new List<TreeNode>();
+            foreach (TreeNode root in treeViewCustom1.Nodes)
+                CollectBoneMatches(root, query, matches);
+
+            quickBoneSearch.ToolTipText = matches.Count == 0
+                ? "No bones match this search."
+                : matches.Count + " bone match(es); press Enter to move to the next match.";
+
+            if (matches.Count == 0)
+                return;
+
+            int currentIndex = matches.IndexOf(treeViewCustom1.SelectedNode);
+            int matchIndex = advance
+                ? (currentIndex < 0 ? 0 : (currentIndex + 1) % matches.Count)
+                : (currentIndex < 0 ? 0 : currentIndex);
+
+            TreeNode match = matches[matchIndex];
+            for (TreeNode parent = match.Parent; parent != null; parent = parent.Parent)
+                parent.Expand();
+
+            match.EnsureVisible();
+            treeViewCustom1.SelectedNode = match;
+        }
+
+        private static void CollectBoneMatches(TreeNode node, string query, List<TreeNode> matches)
+        {
+            if (node is STBone && node.Text.IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0)
+                matches.Add(node);
+
+            foreach (TreeNode child in node.Nodes)
+                CollectBoneMatches(child, query, matches);
         }
 
         public Viewport GetViewport() => viewport;
