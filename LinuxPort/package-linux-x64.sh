@@ -19,6 +19,7 @@ mkdir -p "$DIST" "$APPDIR/usr/bin" "$APPDIR/usr/share/icons/hicolor/256x256/apps
 dotnet publish "$PROJECT" -c Release -r linux-x64 --self-contained true -o "$APPDIR/usr/bin"
 cp "$ROOT/LinuxPort/assets/switch-toolbox-2.png" \
    "$APPDIR/usr/share/icons/hicolor/256x256/apps/switch-toolbox-2.png"
+cp "$ROOT/LinuxPort/assets/switch-toolbox-2.png" "$APPDIR/switch-toolbox-2.png"
 
 cat > "$APPDIR/switch-toolbox-2.desktop" <<'DESKTOP'
 [Desktop Entry]
@@ -28,7 +29,7 @@ Comment=Work-in-progress cross-platform client for Switch Toolbox 2
 Exec=AppRun %F
 Icon=switch-toolbox-2
 Terminal=false
-Categories=Development;Utility;
+Categories=Utility;
 DESKTOP
 
 cat > "$APPDIR/AppRun" <<'APPRUN'
