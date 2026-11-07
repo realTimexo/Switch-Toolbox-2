@@ -9,7 +9,7 @@ namespace Toolbox.Library
     public class WebUtil
     {
         public static void OpenDonation() {
-            OpenURLEncoded("aHR0cHM6Ly9rby1maS5jb20vc2ltcGx5a3hn");
+            OpenURL("https://timexo.gumroad.com/coffee");
         }
 
         public static void OpenURLEncoded(string encodedString)
