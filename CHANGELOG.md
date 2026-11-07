@@ -2,6 +2,20 @@
 
 Notable changes to Switch Toolbox 2 are listed here. Dates use ISO format.
 
+## V2.2.0 - 2026-11-07
+
+### Added
+
+- Add a heart-image toolbar button that opens Timexo's donation page.
+- Allow files and folders to be dropped onto the main window or MDI workspace; folders open in the existing recursive file explorer.
+- Document AI assistance in the README.
+
+### Notes
+
+- The existing Open Folder command remains available alongside drag-and-drop folder opening.
+- The bundled MKW music-editor program is a Windows binary without its source project. Its feature set has not been ported into Switch Toolbox 2.
+- This application targets Windows Forms on .NET Framework 4.8. This release does not provide a native Linux build.
+
 ## V2.1.3 - 2026-11-06
 
 ### Fixed
@@ -10,20 +24,20 @@ Notable changes to Switch Toolbox 2 are listed here. Dates use ISO format.
 
 ### Verification notes
 
-- Compared the supplied original and edited Mario Kart World archives. In `Driver.msbt`, the original `Touring` entry ends with a UTF-16 NUL terminator, while the edited `Spongebob` entry does not. The [TXT2 format](https://nintendo-formats.com/libs/lms/msbt.html) specifies null-terminated messages, matching the reported missing final character. A Windows rebuild and in-game confirmation are still needed to verify the fix end-to-end.
+- MSBT TXT2 messages are null-terminated. Edited strings now receive an encoding-correct terminator; an in-game test is still needed to confirm behavior in each target title.
 
 ## V2.1.2 - 2026-11-06
 
 ### Added
 
-- Register `.msarc` with the existing SARC archive reader/writer. The supplied Mario Kart World `MsgMain.msarc` sample has a standard `SARC` signature and 15 embedded MSBT files, which remain individually identifiable by their filenames for editing and repacking.
+- Register `.msarc` with the existing SARC archive reader/writer so MSARC archives can use the supported SARC/MSBT editing and repacking paths.
 - Preserve the compound inner-format/compression suffix when saving `.zs` files (for example, `asset.bntx.zs`) so the selected BNTX filter no longer changes the extension order.
-- Apply the replacement Save, Update, and AAMP icons supplied in `files.zip`.
+- Apply the replacement Save, Update, and AAMP icons supplied for the project.
 
 ### Verification notes
 
-- The supplied Mario Kart World archive was inspected: its signature is `SARC`, its archive table contains 15 files, and all 15 payloads have the MSBT `MsgStdBn` signature. This supports reusing the established SARC/MSBT handlers; an application-level edit-and-repack test still requires a Windows build.
-- The supplied `NotWorking.bwav` is malformed: both declared DSP-ADPCM channel arrays are one byte shorter than the complete frame length implied by their sample count, and its header CRC matches those truncated arrays rather than full-length channel data. The current encoder pads each channel to a complete ADPCM frame and recomputes the CRC. This is a concrete explanation for corruption in that sample, but does not by itself prove it is the sole cause of the in-game double-audio report; test a fresh export in Mario Kart World before treating playback as resolved.
+- MSARC uses the existing SARC serializer and MSBT handler. Windows application-level editing and repacking tests are required for end-to-end verification.
+- BWAV playback differences in game have not been confirmed as fixed; verify playback with the intended game and hardware before treating that report as resolved.
 
 ## V1.1.2 - 2026-11-04
 
@@ -41,7 +55,7 @@ Notable changes to Switch Toolbox 2 are listed here. Dates use ISO format.
 ### Format notes
 
 - BWAV stores DSP-ADPCM audio, sample rate, channel pan, and loop data. PCM16 is not a BWAV codec, and playback backends such as OpenAL or cubeb are not serialized in the file. The settings dialog explains these limitations rather than writing unsupported fields.
-- The supplied `Original.zip` samples were inspected: both are 48 kHz stereo BWAV files with left/right pans. The original sample marks looping as enabled and uses `0xFFFFFFFF` as the loop end; that sentinel is now displayed as the end of the track.
+- BWAV loop metadata uses a full-track sentinel in some files; the editor displays that sentinel as the end of the track.
 - A full Nintendo Switch 2 game playback test is not available in this build environment; game-specific pitch/double-playback behavior remains to be verified in-game.
 
 ## V1.1.1 - 2026-11-04

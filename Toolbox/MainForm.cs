@@ -53,6 +53,33 @@ namespace Toolbox
         public MainForm()
         {
             InitializeComponent();
+            AllowDrop = true;
+            DragEnter += MainForm_DragEnter;
+            DragDrop += MainForm_DragDrop;
+            tabForms.AllowDrop = true;
+            tabForms.DragEnter += MainForm_DragEnter;
+            tabForms.DragDrop += MainForm_DragDrop;
+            foreach (Control control in Controls)
+            {
+                if (control is MdiClient)
+                {
+                    control.AllowDrop = true;
+                    control.DragEnter += MainForm_DragEnter;
+                    control.DragDrop += MainForm_DragDrop;
+                }
+            }
+
+            var donateButton = new ToolStripButton
+            {
+                Name = "donateToolStripButton",
+                DisplayStyle = ToolStripItemDisplayStyle.Image,
+                Image = Properties.Resources.ResourceManager.GetObject("Donate") as Image,
+                ImageTransparentColor = Color.Magenta,
+                ToolTipText = "Support Switch Toolbox 2"
+            };
+            donateButton.Click += donateToolStripMenuItem_Click;
+            stToolStrip1.Items.Add(donateButton);
+
             try
             {
                 Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
@@ -243,13 +270,44 @@ namespace Toolbox
         private void openFolderToolStripMenuItem_Click(object sender, EventArgs e) {
             FolderSelectDialog dlg = new FolderSelectDialog();
             if (dlg.ShowDialog() == DialogResult.OK)
+                OpenFolder(dlg.SelectedPath);
+        }
+
+        private void OpenFolder(string path)
+        {
+            if (!Directory.Exists(path))
+                return;
+
+            var root = new ExplorerFolder(path);
+            ObjectEditor editor = new ObjectEditor();
+            editor.MdiParent = this;
+            editor.Text = CheckTabDupes(root.Text);
+            editor.AddNode(root);
+            editor.Show();
+        }
+
+        private void MainForm_DragEnter(object sender, DragEventArgs e)
+        {
+            e.Effect = e.Data != null && e.Data.GetDataPresent(DataFormats.FileDrop)
+                ? DragDropEffects.Copy
+                : DragDropEffects.None;
+        }
+
+        private void MainForm_DragDrop(object sender, DragEventArgs e)
+        {
+            if (e.Data == null || !e.Data.GetDataPresent(DataFormats.FileDrop))
+                return;
+
+            var paths = e.Data.GetData(DataFormats.FileDrop) as string[];
+            if (paths == null)
+                return;
+
+            foreach (string path in paths)
             {
-                var root = new ExplorerFolder(dlg.SelectedPath);
-                ObjectEditor editor = new ObjectEditor();
-                editor.MdiParent = this;
-                editor.Text = CheckTabDupes(root.Text);
-                editor.AddNode(root);
-                editor.Show();
+                if (Directory.Exists(path))
+                    OpenFolder(path);
+                else if (File.Exists(path))
+                    OpenFile(path);
             }
         }
 

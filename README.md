@@ -10,6 +10,8 @@
 
 Maintained by **Timexo**. Built on the original [Switch Toolbox](https://github.com/KillzXGaming/Switch-Toolbox) by KillzXGaming and contributors.
 
+Some development and documentation work uses AI assistance. Changes are reviewed by the maintainer; AI assistance does not replace testing or guarantee compatibility.
+
 </div>
 
 ## About
@@ -17,6 +19,8 @@ Maintained by **Timexo**. Built on the original [Switch Toolbox](https://github.
 Switch Toolbox 2 continues the open-source Switch Toolbox project. It brings together viewers and editors for a wide range of Nintendo Switch, Nintendo 3DS, and Wii U formats. Format support varies; files from newer games and newer console generations may require additional work and should be tested individually.
 
 The application is an experimental Windows desktop tool. Keep a backup of game files before editing them. It does not include or provide game keys, game content, or decryption material.
+
+Use **File → Open (Folder)** to browse a directory tree, or drag a folder onto the main workspace. Dropped files open in the appropriate supported editor.
 
 ## Audio
 
