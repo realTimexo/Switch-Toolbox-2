@@ -18,7 +18,9 @@ Some development and documentation work uses AI assistance. Changes are reviewed
 
 Switch Toolbox 2 continues the open-source Switch Toolbox project. It brings together viewers and editors for a wide range of Nintendo Switch, Nintendo 3DS, and Wii U formats. Format support varies; files from newer games and newer console generations may require additional work and should be tested individually.
 
-The application is an experimental Windows desktop tool. Keep a backup of game files before editing them. It does not include or provide game keys, game content, or decryption material.
+The released application is an experimental Windows desktop tool. Keep a backup of game files before editing them. It does not include or provide game keys, game content, or decryption material.
+
+A separate Avalonia/.NET 10 cross-platform client is being developed in [`LinuxPort/`](LinuxPort/README.md) to enable native Linux x86_64 and keep a Windows build path. It currently provides only a native file/folder browser; Nintendo format editing, model/texture rendering, audio, and game-specific tools have not yet been ported. It is a development preview, not a replacement for the released Windows application.
 
 Use **File → Open (Folder)** to browse a directory tree, or drag a folder onto the main workspace. Dropped files open in the appropriate supported editor.
 
@@ -31,6 +33,8 @@ The application can preview supported audio formats and export audio as WAV. **B
 Download a Windows ZIP from [Releases](https://github.com/realTimexo/Switch-Toolbox-2/releases), extract the full archive, and start `Toolbox.exe`. The desktop application targets .NET Framework 4.8 and Windows; install the .NET Framework 4.8 runtime if Windows prompts for it.
 
 To build from source, open `Toolbox.sln` in Visual Studio with the .NET Framework 4.8 targeting pack and NuGet components installed, restore packages, and build the `Release` configuration. The repository's **Actions → Manual Windows Release** workflow can also be started manually. Enter a version name and release notes; it builds Windows binaries and publishes `SwitchToolbox2-<version>.zip` as a GitHub Release asset.
+
+To build the cross-platform client, install the .NET 10 SDK and run `dotnet build LinuxPort/SwitchToolbox.CrossPlatform.csproj -c Release`. The separate **Cross-platform client preview** workflow builds it for Windows and Linux x86_64 and uploads preview AppImage/tar.gz artifacts to Actions; these are not GitHub Releases and do not yet contain the full editor feature set.
 
 ## Credits and license
 

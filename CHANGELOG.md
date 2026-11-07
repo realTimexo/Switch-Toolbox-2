@@ -14,7 +14,8 @@ Notable changes to Switch Toolbox 2 are listed here. Dates use ISO format.
 
 - The existing Open Folder command remains available alongside drag-and-drop folder opening.
 - The bundled MKW music-editor program is a Windows binary without its source project. Its feature set has not been ported into Switch Toolbox 2.
-- This application targets Windows Forms on .NET Framework 4.8. This release does not provide a native Linux build.
+- A separate Avalonia/.NET 10 client now exists in `LinuxPort/` as a development preview. It currently provides only native file/folder browsing; Nintendo format editors and rendering are not yet ported.
+- The released desktop application still targets Windows Forms on .NET Framework 4.8. No complete Linux build or Linux GitHub Release is being published until the feature port is complete.
 
 ## V2.1.3 - 2026-11-06
 
